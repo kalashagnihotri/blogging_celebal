@@ -10,6 +10,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import HomePage from './pages/Home';
 import DashboardSimple from './pages/DashboardSimple';
 import ForYou from './pages/ForYou';
+import Profile from './pages/Profile';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import CreatePost from './pages/CreatePost';
@@ -28,6 +29,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/posts/:id" element={<PostDetail />} />
+              <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route
                 path="/dashboard"
                 element={

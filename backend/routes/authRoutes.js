@@ -3,6 +3,7 @@ const {
   register,
   login,
   getMe,
+  getUserProfile,
   updateDetails,
   updatePassword,
   refreshToken,
@@ -20,6 +21,7 @@ const router = express.Router();
 router.post('/register', validateUserRegistration, register);
 router.post('/login', validateUserLogin, login);
 router.post('/refresh', refreshToken);
+router.get('/profile/:id', getUserProfile); // Public profile endpoint
 
 // Protected routes
 router.get('/me', authenticateToken, getMe);

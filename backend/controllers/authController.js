@@ -60,6 +60,22 @@ const getMe = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// @desc    Get user profile by ID
+// @route   GET /api/v1/auth/profile/:id
+// @access  Public
+const getUserProfile = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id).select('-password');
+
+  if (!user) {
+    return next(new ErrorResponse('User not found', 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+});
+
 // @desc    Update user details
 // @route   PUT /api/v1/auth/updatedetails
 // @access  Private
@@ -148,6 +164,7 @@ module.exports = {
   register,
   login,
   getMe,
+  getUserProfile,
   updateDetails,
   updatePassword,
   refreshToken,

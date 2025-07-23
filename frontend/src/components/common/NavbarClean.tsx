@@ -103,7 +103,7 @@ const Navbar: React.FC = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                     <Link
-                      to="/profile"
+                      to={`/profile/${user?.id}`}
                       className="flex items-center space-x-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
@@ -191,6 +191,15 @@ const Navbar: React.FC = () => {
                   >
                     <span className="text-xl">📊</span>
                     <span className="font-medium">Dashboard</span>
+                  </Link>
+                  
+                  <Link 
+                    to={`/profile/${user?.id}`}
+                    className="flex items-center space-x-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl">👤</span>
+                    <span className="font-medium">Profile</span>
                   </Link>
                   
                   <Link 

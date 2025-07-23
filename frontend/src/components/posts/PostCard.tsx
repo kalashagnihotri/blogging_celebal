@@ -112,7 +112,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
 
           {/* Author and Meta */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3">
+            <Link 
+              to={`/profile/${post.author._id}`}
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
+            >
               {post.author.avatar ? (
                 <img
                   src={post.author.avatar}
@@ -125,7 +128,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200">
                   {post.author.name}
                 </p>
                 <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-400">
@@ -135,7 +138,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
                   </span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Stats */}
             <div className="flex items-center space-x-4">
