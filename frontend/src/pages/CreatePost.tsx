@@ -8,6 +8,7 @@ import {
   EyeIcon,
   DocumentTextIcon 
 } from '@heroicons/react/24/outline';
+import ImageUpload from '../components/ui/ImageUpload';
 
 interface FormData {
   title: string;
@@ -98,11 +99,13 @@ const CreatePost: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('content', formData.content);
-      formDataToSend.append('excerpt', formData.excerpt || formData.content.substring(0, 150));
-      formDataToSend.append('category', formData.category || 'other');
+      const postData: any = {
+        title: formData.title,
+        content: formData.content,
+        excerpt: formData.excerpt || formData.content.substring(0, 150),
+        category: formData.category || 'other',
+        image: previewImage || '', // Use the uploaded image URL
+      };
       
       // Process tags - send as comma-separated string, let backend handle the parsing
       const tagsArray = formData.tags
@@ -111,16 +114,12 @@ const CreatePost: React.FC = () => {
         .filter(tag => tag.length > 0);
       
       if (tagsArray.length > 0) {
-        formDataToSend.append('tags', tagsArray.join(','));
+        postData.tags = tagsArray.join(',');
       }
 
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
-      }
-
-      const response = await axios.post(`${baseUrl}/api/v1/posts`, formDataToSend, {
+      const response = await axios.post(`${baseUrl}/api/v1/posts`, postData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
@@ -277,42 +276,14 @@ const CreatePost: React.FC = () => {
                     Featured Image
                   </label>
                   
-                  {previewImage ? (
-                    <div className="relative">
-                      <img
-                        src={previewImage}
-                        alt="Preview"
-                        className="w-full h-64 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-primary-400 dark:hover:border-primary-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-700"
-                    >
-                      <PhotoIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                        PNG, JPG, GIF up to 2MB
-                      </p>
-                    </div>
-                  )}
-                  
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
+                  <ImageUpload
+                    uploadType="blog"
+                    onImageUpload={(imageUrl) => {
+                      setPreviewImage(imageUrl);
+                      setFormData(prev => ({ ...prev, image: null })); // Clear file since we're using URL
+                    }}
+                    currentImage={previewImage}
+                    className="w-full"
                   />
                 </div>
 

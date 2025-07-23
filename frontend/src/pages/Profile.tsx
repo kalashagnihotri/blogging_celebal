@@ -166,7 +166,9 @@ const Profile: React.FC = () => {
             {/* Profile Image */}
             <div className="relative">
               <img
-                src={userProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&size=128&background=6366f1&color=ffffff`}
+                src={userProfile.avatar && userProfile.avatar !== 'default-avatar.png' 
+                  ? userProfile.avatar 
+                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&size=128&background=6366f1&color=ffffff`}
                 alt={userProfile.name}
                 className="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 shadow-lg"
               />

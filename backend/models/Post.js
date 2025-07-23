@@ -33,6 +33,10 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: 'default-post.jpg',
     },
+    imagePublicId: {
+      type: String,
+      default: null,
+    },
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

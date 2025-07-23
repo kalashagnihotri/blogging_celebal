@@ -173,9 +173,9 @@ const ProfilePage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar */}
             <div className="relative">
-              {profile.avatar ? (
+              {profile.avatar && profile.avatar !== 'default-avatar.png' && profile.avatar.startsWith('http') ? (
                 <img
-                  src={profile.avatar.startsWith('http') ? profile.avatar : `${baseUrl}${profile.avatar}`}
+                  src={profile.avatar}
                   alt={profile.name}
                   className="w-32 h-32 rounded-full object-cover border-4 border-indigo-200 dark:border-indigo-800"
                 />

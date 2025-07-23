@@ -1,35 +1,49 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../config/cloudinaryConfig');
 const { authenticateToken } = require('../middlewares/auth');
+const User = require('../models/User');
 const ErrorResponse = require('../utils/ErrorResponse');
 const catchAsyncErrors = require('../utils/catchAsyncErrors');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../uploads/avatars');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure multer for avatar uploads
+// Configure multer for temporary storage before Cloudinary upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    const tempDir = path.join(__dirname, '../temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    cb(null, tempDir);
   },
   filename: (req, file, cb) => {
-    // Create unique filename
+    // Create unique filename for temporary storage
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, 'temp-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit for avatars
   },
   fileFilter: (req, file, cb) => {
     // Check file type
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new ErrorResponse('Only image files are allowed', 400), false);
+    }
+  }
+});
+
+const uploadPostImageMulter = multer({
+  storage: storage, // Use same temporary storage
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for posts
+  },
+  fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -46,21 +60,50 @@ const uploadAvatar = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorResponse('Please upload an image', 400));
   }
 
-  // Generate URL for the uploaded file
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? process.env.BASE_URL || 'https://your-domain.com'
-    : `http://localhost:${process.env.PORT || 5001}`;
-  
-  const fileUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+  try {
+    // Upload to Cloudinary
+    const cloudinaryResult = await uploadToCloudinary(req.file.path, 'avatars');
 
-  res.status(200).json({
-    success: true,
-    data: {
-      url: fileUrl,
-      filename: req.file.filename,
-      size: req.file.size
+    if (!cloudinaryResult.success) {
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+      return next(new ErrorResponse('Failed to upload image to cloud storage', 500));
     }
-  });
+
+    // Update user's avatar in database
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { 
+        avatar: cloudinaryResult.url,
+        avatarPublicId: cloudinaryResult.public_id
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      imageUrl: cloudinaryResult.url,
+      data: {
+        url: cloudinaryResult.url,
+        user: user,
+        cloudinary: {
+          public_id: cloudinaryResult.public_id,
+          format: cloudinaryResult.format,
+          bytes: cloudinaryResult.bytes,
+        },
+      },
+    });
+  } catch (error) {
+    // Clean up temp file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return next(new ErrorResponse('Upload failed', 500));
+  }
 });
 
 // @desc    Upload post image
@@ -71,54 +114,70 @@ const uploadPostImage = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorResponse('Please upload an image', 400));
   }
 
-  const postUploadDir = path.join(__dirname, '../uploads/posts');
-  if (!fs.existsSync(postUploadDir)) {
-    fs.mkdirSync(postUploadDir, { recursive: true });
-  }
+  try {
+    // Upload to Cloudinary
+    const cloudinaryResult = await uploadToCloudinary(req.file.path, 'posts');
 
-  // Generate URL for the uploaded file
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? process.env.BASE_URL || 'https://your-domain.com'
-    : `http://localhost:${process.env.PORT || 5001}`;
-  
-  const fileUrl = `${baseUrl}/uploads/posts/${req.file.filename}`;
-
-  res.status(200).json({
-    success: true,
-    data: {
-      url: fileUrl,
-      filename: req.file.filename,
-      size: req.file.size
+    if (!cloudinaryResult.success) {
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+      return next(new ErrorResponse('Failed to upload image to cloud storage', 500));
     }
-  });
+
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).json({
+      success: true,
+      message: 'Post image uploaded successfully',
+      imageUrl: cloudinaryResult.url,
+      data: {
+        url: cloudinaryResult.url,
+        cloudinary: {
+          public_id: cloudinaryResult.public_id,
+          format: cloudinaryResult.format,
+          bytes: cloudinaryResult.bytes,
+        },
+      },
+    });
+  } catch (error) {
+    // Clean up temp file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return next(new ErrorResponse('Upload failed', 500));
+  }
 });
 
-const postImageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const postUploadDir = path.join(__dirname, '../uploads/posts');
-    cb(null, postUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'post-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// @desc    Delete image from Cloudinary
+// @route   DELETE /api/v1/upload/:publicId
+// @access  Private
+const deleteImage = catchAsyncErrors(async (req, res, next) => {
+  const { publicId } = req.params;
 
-const uploadPostImageMulter = multer({
-  storage: postImageStorage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit for posts
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new ErrorResponse('Only image files are allowed', 400), false);
+  if (!publicId) {
+    return next(new ErrorResponse('Public ID is required', 400));
+  }
+
+  try {
+    const result = await deleteFromCloudinary(publicId);
+
+    if (!result.success) {
+      return next(new ErrorResponse('Failed to delete image from cloud storage', 500));
     }
+
+    res.status(200).json({
+      success: true,
+      message: 'Image deleted successfully',
+      data: result,
+    });
+  } catch (error) {
+    return next(new ErrorResponse('Delete failed', 500));
   }
 });
 
 module.exports = {
   uploadAvatar: [authenticateToken, upload.single('image'), uploadAvatar],
-  uploadPostImage: [authenticateToken, uploadPostImageMulter.single('image'), uploadPostImage]
+  uploadPostImage: [authenticateToken, uploadPostImageMulter.single('image'), uploadPostImage],
+  deleteImage: [authenticateToken, deleteImage],
 };

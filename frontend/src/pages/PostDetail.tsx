@@ -182,9 +182,9 @@ const PostDetail: React.FC = () => {
         <div className="flex items-start space-x-3">
           <img
             src={
-              comment.author.avatar
-                ? `${baseUrl}/uploads/${comment.author.avatar}`
-                : '/default-avatar.png'
+              comment.author.avatar && comment.author.avatar !== 'default-avatar.png' && comment.author.avatar.startsWith('http')
+                ? comment.author.avatar
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.name)}&size=32&background=6366f1&color=ffffff`
             }
             alt={comment.author.name}
             className="h-8 w-8 rounded-full object-cover"
@@ -249,9 +249,9 @@ const PostDetail: React.FC = () => {
             <div className="flex items-center space-x-4">
               <img
                 src={
-                  post.author.avatar
-                    ? `${baseUrl}/uploads/${post.author.avatar}`
-                    : '/default-avatar.png'
+                  post.author.avatar && post.author.avatar !== 'default-avatar.png' && post.author.avatar.startsWith('http')
+                    ? post.author.avatar
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&size=48&background=6366f1&color=ffffff`
                 }
                 alt={post.author.name}
                 className="h-12 w-12 rounded-full object-cover"
@@ -326,7 +326,7 @@ const PostDetail: React.FC = () => {
         {post.image && post.image !== 'default-post.jpg' && (
           <div className="bg-white dark:bg-gray-800 px-8">
             <img
-              src={`${baseUrl}/uploads/${post.image}`}
+              src={post.image.startsWith('http') ? post.image : `${baseUrl}/uploads/${post.image}`}
               alt={post.title}
               className="w-full h-96 object-cover rounded-lg"
             />

@@ -17,6 +17,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-toastify';
+import ImageUpload from '../components/ui/ImageUpload';
 
 interface EditProfileData {
   name: string;
@@ -62,8 +63,8 @@ const EditProfile: React.FC = () => {
         linkedin: user.linkedin || ''
       });
       
-      if (user.avatar) {
-        setAvatarPreview(user.avatar.startsWith('http') ? user.avatar : `${baseUrl}${user.avatar}`);
+      if (user.avatar && user.avatar !== 'default-avatar.png' && user.avatar.startsWith('http')) {
+        setAvatarPreview(user.avatar);
       }
     }
   }, [user, baseUrl]);
@@ -105,27 +106,18 @@ const EditProfile: React.FC = () => {
         return;
       }
 
-      const formData = new FormData();
-      
-      // Add profile data
-      Object.entries(profileData).forEach(([key, value]) => {
-        if (value) {
-          formData.append(key, value);
-        }
-      });
-
-      // Add avatar if selected
-      if (avatarFile) {
-        formData.append('avatar', avatarFile);
-      }
+      const updateData = {
+        ...profileData,
+        avatar: avatarPreview || '' // Use the uploaded image URL
+      };
 
       const response = await axios.put(
         `${baseUrl}/api/v1/auth/updatedetails`,
-        formData,
+        updateData,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -181,40 +173,16 @@ const EditProfile: React.FC = () => {
             isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
           }`}>
             <h2 className="text-xl font-semibold mb-6">Profile Picture</h2>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full object-cover border-4 border-indigo-200 dark:border-indigo-800"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-indigo-200 dark:border-indigo-800">
-                    <span className="text-2xl font-bold text-white">
-                      {getInitials(profileData.name || 'U')}
-                    </span>
-                  </div>
-                )}
-                <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer transition-colors">
-                  <Camera className="w-4 h-4" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <div>
-                <h3 className="font-medium mb-1">Change Profile Picture</h3>
-                <p className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  JPG, PNG or GIF. Max size 5MB.
-                </p>
-              </div>
-            </div>
+            
+            <ImageUpload
+              uploadType="profile"
+              onImageUpload={(imageUrl) => {
+                setAvatarPreview(imageUrl);
+                setAvatarFile(null); // Clear file since we're using URL now
+              }}
+              currentImage={avatarPreview}
+              className="max-w-md"
+            />
           </div>
 
           {/* Basic Information */}

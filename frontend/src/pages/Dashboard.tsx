@@ -117,9 +117,9 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center">
               <img
                 src={
-                  user?.avatar
-                    ? `${baseUrl}/uploads/${user.avatar}`
-                    : '/default-avatar.png'
+                  user?.avatar && user.avatar !== 'default-avatar.png' && user.avatar.startsWith('http')
+                    ? user.avatar
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&size=64&background=6366f1&color=ffffff`
                 }
                 alt={user?.name}
                 className="h-16 w-16 rounded-full object-cover"

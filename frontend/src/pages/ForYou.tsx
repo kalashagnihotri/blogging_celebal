@@ -182,9 +182,9 @@ const ForYou: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <img
                         src={
-                          post.author.avatar && post.author.avatar !== 'default-avatar.png'
-                            ? `${baseUrl}/uploads/${post.author.avatar}`
-                            : '/api/placeholder/32/32'
+                          post.author.avatar && post.author.avatar !== 'default-avatar.png' && post.author.avatar.startsWith('http')
+                            ? post.author.avatar
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&size=32&background=6366f1&color=ffffff`
                         }
                         alt={post.author.name}
                         className="h-8 w-8 rounded-full object-cover"
