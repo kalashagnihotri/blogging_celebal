@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         'Please add a valid email',
       ],
+      index: true,
     },
     password: {
       type: String,
@@ -37,6 +38,26 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
       maxlength: [500, 'Bio cannot be more than 500 characters'],
+    },
+    location: {
+      type: String,
+      maxlength: [100, 'Location cannot be more than 100 characters'],
+    },
+    website: {
+      type: String,
+      maxlength: [200, 'Website URL cannot be more than 200 characters'],
+    },
+    twitter: {
+      type: String,
+      maxlength: [100, 'Twitter handle cannot be more than 100 characters'],
+    },
+    github: {
+      type: String,
+      maxlength: [100, 'GitHub username cannot be more than 100 characters'],
+    },
+    linkedin: {
+      type: String,
+      maxlength: [200, 'LinkedIn URL cannot be more than 200 characters'],
     },
     isActive: {
       type: Boolean,
@@ -62,8 +83,5 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
-// Create indexes for better performance
-userSchema.index({ email: 1 });
 
 module.exports = mongoose.model('User', userSchema);

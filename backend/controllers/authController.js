@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const ErrorResponse = require('../utils/ErrorResponse');
 const catchAsyncErrors = require('../utils/catchAsyncErrors');
@@ -64,7 +65,14 @@ const getMe = catchAsyncErrors(async (req, res, next) => {
 // @route   GET /api/v1/auth/profile/:id
 // @access  Public
 const getUserProfile = catchAsyncErrors(async (req, res, next) => {
-  const user = await User.findById(req.params.id).select('-password');
+  const { id } = req.params;
+
+  // Validate ObjectId format
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return next(new ErrorResponse('Invalid user ID format', 400));
+  }
+
+  const user = await User.findById(id).select('-password');
 
   if (!user) {
     return next(new ErrorResponse('User not found', 404));
@@ -76,6 +84,35 @@ const getUserProfile = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// @desc    Get platform stats
+// @route   GET /api/v1/auth/stats
+// @access  Public
+const getPlatformStats = catchAsyncErrors(async (req, res, next) => {
+  const Post = require('../models/Post');
+  
+  // Get total posts count
+  const totalPosts = await Post.countDocuments({ published: true });
+  
+  // Get total users count
+  const totalUsers = await User.countDocuments({ isActive: true });
+  
+  // Get total views from all posts
+  const viewsAggregation = await Post.aggregate([
+    { $match: { published: true } },
+    { $group: { _id: null, totalViews: { $sum: '$views' } } }
+  ]);
+  const totalViews = viewsAggregation.length > 0 ? viewsAggregation[0].totalViews : 0;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalPosts,
+      totalUsers,
+      totalViews
+    }
+  });
+});
+
 // @desc    Update user details
 // @route   PUT /api/v1/auth/updatedetails
 // @access  Private
@@ -84,7 +121,20 @@ const updateDetails = catchAsyncErrors(async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     bio: req.body.bio,
+    location: req.body.location,
+    website: req.body.website,
+    twitter: req.body.twitter,
+    github: req.body.github,
+    linkedin: req.body.linkedin,
+    avatar: req.body.avatar,
   };
+
+  // Remove undefined fields
+  Object.keys(fieldsToUpdate).forEach(key => {
+    if (fieldsToUpdate[key] === undefined) {
+      delete fieldsToUpdate[key];
+    }
+  });
 
   const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
     new: true,
@@ -165,6 +215,7 @@ module.exports = {
   login,
   getMe,
   getUserProfile,
+  getPlatformStats,
   updateDetails,
   updatePassword,
   refreshToken,

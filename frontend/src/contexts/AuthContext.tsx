@@ -8,6 +8,11 @@ interface User {
   role: string;
   avatar?: string;
   bio?: string;
+  location?: string;
+  website?: string;
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
 }
 
 interface AuthState {

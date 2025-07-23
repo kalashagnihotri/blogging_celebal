@@ -71,9 +71,12 @@ const Profile: React.FC = () => {
         const targetUserId = userId || currentUser?.id;
         
         if (!targetUserId) {
-          setError('User not found');
+          setError('User ID is required to view profile');
+          setLoading(false);
           return;
         }
+
+        console.log('Fetching profile for user ID:', targetUserId); // Debug log
 
         // Fetch user profile
         const profileResponse = await axios.get(`${baseUrl}/api/v1/auth/profile/${targetUserId}`);
@@ -180,7 +183,7 @@ const Profile: React.FC = () => {
                 <h1 className="text-3xl font-bold mb-2 sm:mb-0">{userProfile.name}</h1>
                 {isOwnProfile && (
                   <Link
-                    to="/settings"
+                    to="/edit-profile"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                   >
                     <Settings className="w-4 h-4" />

@@ -43,15 +43,18 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get(`${baseUrl}/api/v1/posts`);
-        if (response.data && response.data.data) {
-          setStats(prev => ({
-            ...prev,
-            totalPosts: response.data.data.length || 0
-          }));
+        // Fetch platform stats from the dedicated endpoint
+        const response = await axios.get(`${baseUrl}/api/v1/auth/stats`);
+        if (response.data && response.data.success) {
+          setStats({
+            totalPosts: response.data.data.totalPosts || 0,
+            totalWriters: response.data.data.totalUsers || 0,
+            totalReaders: response.data.data.totalViews || 0
+          });
         }
       } catch (error) {
         console.error('Error fetching stats:', error);
+        // Keep default values if API fails
       }
     };
 

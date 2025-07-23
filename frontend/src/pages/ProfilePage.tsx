@@ -62,7 +62,8 @@ const ProfilePage: React.FC = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await axios.get(`${baseUrl}/api/v1/users/${id}`, { headers });
+      // Use the correct API endpoint for user profile
+      const response = await axios.get(`${baseUrl}/api/v1/auth/profile/${id}`, { headers });
       setProfile(response.data.data);
       
       // Fetch stats if available
@@ -88,14 +89,9 @@ const ProfilePage: React.FC = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      // Fetch all posts and filter by author (you might want to create a specific endpoint)
-      const response = await axios.get(`${baseUrl}/api/v1/posts`, { headers });
-      const allPosts = response.data.data || response.data.posts || [];
-      
-      // Filter posts by the profile user
-      const filteredPosts = allPosts.filter((post: any) => 
-        post.author._id === id || post.author.id === id
-      );
+      // Use the correct API endpoint for user posts
+      const response = await axios.get(`${baseUrl}/api/v1/posts/user/${id}`, { headers });
+      const filteredPosts = response.data.data || [];
       
       setUserPosts(filteredPosts);
       

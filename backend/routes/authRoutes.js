@@ -4,6 +4,7 @@ const {
   login,
   getMe,
   getUserProfile,
+  getPlatformStats,
   updateDetails,
   updatePassword,
   refreshToken,
@@ -22,6 +23,7 @@ router.post('/register', validateUserRegistration, register);
 router.post('/login', validateUserLogin, login);
 router.post('/refresh', refreshToken);
 router.get('/profile/:id', getUserProfile); // Public profile endpoint
+router.get('/stats', getPlatformStats); // Public stats endpoint
 
 // Protected routes
 router.get('/me', authenticateToken, getMe);

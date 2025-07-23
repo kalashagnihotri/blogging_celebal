@@ -11,6 +11,7 @@ import HomePage from './pages/Home';
 import DashboardSimple from './pages/DashboardSimple';
 import ForYou from './pages/ForYou';
 import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import CreatePost from './pages/CreatePost';
@@ -31,6 +32,7 @@ function App() {
               <Route path="/posts/:id" element={<PostDetail />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
               <Route
                 path="/dashboard"
                 element={
