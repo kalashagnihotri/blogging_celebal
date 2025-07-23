@@ -1,0 +1,20 @@
+{
+  "name": "blog-platform",
+  "version": "1.0.0",
+  "description": "A full-stack blog platform with Node.js, Express, MongoDB, React, and TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "install-deps": "cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "test": "cd backend && npm test"
+  },
+  "keywords": ["blog", "nodejs", "react", "typescript", "mongodb"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
