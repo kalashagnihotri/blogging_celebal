@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -51,6 +51,7 @@ const PostDetail: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCommenting, setIsCommenting] = useState(false);
+  const viewRecorded = useRef(false);
 
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
@@ -58,9 +59,10 @@ const PostDetail: React.FC = () => {
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
   useEffect(() => {
-    if (id) {
+    if (id && !viewRecorded.current) {
       fetchPost();
       fetchComments();
+      viewRecorded.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -80,7 +82,7 @@ const PostDetail: React.FC = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/api/v1/posts/${id}/comments`);
+      const response = await axios.get(`${baseUrl}/api/v1/comments/post/${id}`);
       setComments(response.data.data);
     } catch (error) {
       console.error('Failed to fetch comments');
@@ -139,7 +141,7 @@ const PostDetail: React.FC = () => {
     setIsCommenting(true);
 
     try {
-      const response = await axios.post(`${baseUrl}/api/v1/posts/${id}/comments`, {
+      const response = await axios.post(`${baseUrl}/api/v1/comments/post/${id}`, {
         content: newComment
       });
       
@@ -205,7 +207,7 @@ const PostDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
@@ -213,9 +215,9 @@ const PostDetail: React.FC = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Post not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Post not found</h2>
           <Link to="/" className="text-primary-600 hover:text-primary-700">
             Go back to home
           </Link>
@@ -228,13 +230,13 @@ const PostDetail: React.FC = () => {
   const isLiked = user ? post.likes.includes(user.id) : false;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation */}
         <div className="mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back
@@ -242,7 +244,7 @@ const PostDetail: React.FC = () => {
         </div>
 
         {/* Post Header */}
-        <header className="bg-white rounded-t-2xl p-8">
+        <header className="bg-white dark:bg-gray-800 rounded-t-2xl p-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <img
@@ -255,8 +257,8 @@ const PostDetail: React.FC = () => {
                 className="h-12 w-12 rounded-full object-cover"
               />
               <div>
-                <h3 className="font-medium text-gray-900">{post.author.name}</h3>
-                <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                <h3 className="font-medium text-gray-900 dark:text-white">{post.author.name}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(post.createdAt)}</p>
               </div>
             </div>
 
@@ -280,12 +282,12 @@ const PostDetail: React.FC = () => {
             )}
           </div>
 
-          <h1 className="text-4xl font-heading font-bold text-gray-900 mb-6 leading-tight">
+          <h1 className="text-4xl font-heading font-bold text-gray-900 dark:text-white mb-6 leading-tight">
             {post.title}
           </h1>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6 text-sm text-gray-500">
+            <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
               <span className="flex items-center">
                 <Eye className="h-4 w-4 mr-1" />
                 {post.views} views
@@ -322,7 +324,7 @@ const PostDetail: React.FC = () => {
 
         {/* Post Image */}
         {post.image && post.image !== 'default-post.jpg' && (
-          <div className="bg-white px-8">
+          <div className="bg-white dark:bg-gray-800 px-8">
             <img
               src={`${baseUrl}/uploads/${post.image}`}
               alt={post.title}
@@ -332,20 +334,20 @@ const PostDetail: React.FC = () => {
         )}
 
         {/* Post Content */}
-        <div className="bg-white px-8 pb-8">
+        <div className="bg-white dark:bg-gray-800 px-8 pb-8">
           <div className="prose max-w-none">
-            <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-lg">
+            <div className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap text-lg">
               {post.content}
             </div>
           </div>
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm"
                 >
                   #{tag}
                 </span>
@@ -355,8 +357,8 @@ const PostDetail: React.FC = () => {
         </div>
 
         {/* Comments Section */}
-        <div className="bg-white rounded-b-2xl p-8 border-t border-gray-200">
-          <h2 className="text-2xl font-heading font-bold text-gray-900 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-b-2xl p-8 border-t border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-6">
             Comments ({comments.length})
           </h2>
 
@@ -377,7 +379,7 @@ const PostDetail: React.FC = () => {
                   <textarea
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                     rows={4}
                     placeholder="Write a comment..."
                   />

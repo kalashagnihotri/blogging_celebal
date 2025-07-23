@@ -157,10 +157,37 @@ const uploadAvatar = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// @desc    Get current user's stats
+// @route   GET /api/v1/users/stats
+// @access  Private
+const getMyStats = catchAsyncErrors(async (req, res, next) => {
+  const Post = require('../models/Post');
+  
+  // Get user's posts
+  const userPosts = await Post.find({ author: req.user.id });
+  
+  // Calculate stats
+  const totalPosts = userPosts.length;
+  const totalViews = userPosts.reduce((sum, post) => sum + (post.views || 0), 0);
+  const totalLikes = userPosts.reduce((sum, post) => sum + (post.likesCount || 0), 0);
+  
+  const stats = {
+    totalPosts,
+    totalViews,
+    totalLikes
+  };
+
+  res.status(200).json({
+    success: true,
+    data: stats,
+  });
+});
+
 module.exports = {
   getAllUsers,
   getUser,
   updateUser,
   deleteUser,
   uploadAvatar,
+  getMyStats,
 };

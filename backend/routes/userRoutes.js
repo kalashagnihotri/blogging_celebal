@@ -5,6 +5,7 @@ const {
   updateUser,
   deleteUser,
   uploadAvatar,
+  getMyStats,
 } = require('../controllers/userController');
 const { authenticateToken, authorizeRoles } = require('../middlewares/auth');
 const { uploadSingleImage } = require('../middlewares/upload');
@@ -33,6 +34,8 @@ router.delete(
 );
 
 // Protected routes
+router.get('/stats', authenticateToken, getMyStats);
+
 router.get(
   '/:id',
   authenticateToken,

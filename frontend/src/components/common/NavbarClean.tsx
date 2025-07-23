@@ -51,6 +51,14 @@ const Navbar: React.FC = () => {
               <span className="font-medium">Home</span>
             </Link>
 
+            <Link 
+              to="/for-you" 
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+            >
+              <span className="text-lg group-hover:scale-110 transition-transform duration-200">🌟</span>
+              <span className="font-medium">For You</span>
+            </Link>
+
             {isAuthenticated && (
               <>
                 <Link 
@@ -163,6 +171,15 @@ const Navbar: React.FC = () => {
               >
                 <span className="text-xl">🏠</span>
                 <span className="font-medium">Home</span>
+              </Link>
+
+              <Link 
+                to="/for-you" 
+                className="flex items-center space-x-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="text-xl">🌟</span>
+                <span className="font-medium">For You</span>
               </Link>
 
               {isAuthenticated && (

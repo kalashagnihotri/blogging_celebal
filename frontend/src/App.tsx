@@ -7,8 +7,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import NavbarClean from './components/common/NavbarClean';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import HomeProfessional from './pages/HomeProfessional';
+import HomePage from './pages/Home';
 import DashboardSimple from './pages/DashboardSimple';
+import ForYou from './pages/ForYou';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import CreatePost from './pages/CreatePost';
@@ -22,7 +23,8 @@ function App() {
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <NavbarClean />
             <Routes>
-              <Route path="/" element={<HomeProfessional />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/for-you" element={<ForYou />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/posts/:id" element={<PostDetail />} />

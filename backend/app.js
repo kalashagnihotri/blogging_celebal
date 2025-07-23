@@ -32,7 +32,11 @@ app.use(hpp());
 
 // CORS
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000',
+    'http://192.168.1.9:3000',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
   credentials: true,
 }));
 

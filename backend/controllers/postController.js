@@ -286,6 +286,21 @@ const getFeaturedPosts = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// @desc    Get current user's posts
+// @route   GET /api/v1/posts/my-posts
+// @access  Private
+const getMyPosts = catchAsyncErrors(async (req, res, next) => {
+  const posts = await Post.find({ author: req.user.id })
+    .populate('author', 'name email avatar')
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: posts.length,
+    data: posts,
+  });
+});
+
 module.exports = {
   getPosts,
   getPost,
@@ -295,4 +310,5 @@ module.exports = {
   likePost,
   getPostsByUser,
   getFeaturedPosts,
+  getMyPosts,
 };

@@ -55,6 +55,17 @@ const validatePost = [
     .withMessage('Please select a valid category'),
   body('tags')
     .optional()
+    .customSanitizer((value) => {
+      // Handle comma-separated string from FormData
+      if (typeof value === 'string') {
+        return value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      }
+      // Handle array directly (for JSON requests)
+      if (Array.isArray(value)) {
+        return value;
+      }
+      return [];
+    })
     .isArray()
     .withMessage('Tags must be an array'),
   body('excerpt')

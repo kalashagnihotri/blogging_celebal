@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   BookOpen, 
@@ -6,462 +6,307 @@ import {
   BarChart3, 
   PenTool, 
   Sparkles, 
-  ArrowRight,
-  Filter
+  Filter,
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-toastify';
-import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import PostCard from '../components/posts/PostCard';
+import { useTheme } from '../contexts/ThemeContext';
 
-// Skeleton component for loading state
-const PostCardSkeleton = () => (
-  <div className="bg-white rounded-lg shadow-sm border animate-pulse">
-    <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-    <div className="p-6">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-      <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-3 bg-gray-200 rounded w-24"></div>
-        <div className="h-3 bg-gray-200 rounded w-16"></div>
-      </div>
-    </div>
-  </div>
-);
-
-interface Post {
-  _id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  tags: string[];
-  image: string;
-  author: {
-    _id: string;
-    name: string;
-    avatar: string;
-  };
-  views: number;
-  likesCount: number;
-  likes: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-const Home: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const HomePage: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
+  const { isDarkMode } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [stats, setStats] = useState({
+    totalPosts: 0,
+    totalWriters: 100,
+    totalReaders: 1000
+  });
 
-  const { user, isAuthenticated } = useAuth();
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  
+  // Categories for filtering
+  const categories = [
+    'Technology', 
+    'Design', 
+    'Travel', 
+    'Lifestyle', 
+    'Business', 
+    'Health',
+    'Food',
+    'Science'
+  ];
 
-  const categories = ['technology', 'design', 'lifestyle', 'travel', 'food', 'business'];
-
-  const fetchPosts = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const query = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '9',
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedCategory && { category: selectedCategory })
-      });
-
-      const response = await axios.get(`${baseUrl}/api/posts?${query}`);
-      setPosts(response.data.posts);
-      setTotalPages(response.data.totalPages);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      toast.error('Failed to fetch posts');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [baseUrl, currentPage, searchTerm, selectedCategory]);
-
-  const fetchFeaturedPosts = useCallback(async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/api/posts?featured=true&limit=3`);
-      setFeaturedPosts(response.data.posts);
-    } catch (error) {
-      console.error('Error fetching featured posts:', error);
-    }
-  }, [baseUrl]);
-
+  // Fetch basic stats on component mount
   useEffect(() => {
-    fetchPosts();
-    fetchFeaturedPosts();
-  }, [fetchPosts, fetchFeaturedPosts]);
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}/api/v1/posts`);
+        if (response.data && response.data.data) {
+          setStats(prev => ({
+            ...prev,
+            totalPosts: response.data.data.length || 0
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
 
-  const handleLike = async (postId: string) => {
-    if (!isAuthenticated || !user) {
-      toast.error('Please log in to like posts');
-      return;
-    }
-
-    try {
-      await axios.post(`${baseUrl}/api/posts/${postId}/like`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      // Update the post in the current list
-      setPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post._id === postId) {
-            const isLiked = post.likes.includes((user as any)._id);
-            return {
-              ...post,
-              likes: isLiked 
-                ? post.likes.filter(id => id !== (user as any)._id)
-                : [...post.likes, (user as any)._id],
-              likesCount: isLiked ? post.likesCount - 1 : post.likesCount + 1
-            };
-          }
-          return post;
-        })
-      );
-
-      // Update featured posts if the liked post is in featured
-      setFeaturedPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post._id === postId) {
-            const isLiked = post.likes.includes((user as any)._id);
-            return {
-              ...post,
-              likes: isLiked 
-                ? post.likes.filter(id => id !== (user as any)._id)
-                : [...post.likes, (user as any)._id],
-              likesCount: isLiked ? post.likesCount - 1 : post.likesCount + 1
-            };
-          }
-          return post;
-        })
-      );
-    } catch (error) {
-      toast.error('Failed to like post');
-    }
-  };
+    fetchStats();
+  }, [baseUrl]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1);
-    fetchPosts();
+    // Navigate to For You page with search parameters
+    window.location.href = `/for-you?search=${encodeURIComponent(searchTerm)}&category=${encodeURIComponent(selectedCategory)}`;
   };
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
+  const handleCategoryFilter = (category: string) => {
+    // Navigate to For You page with category filter
+    window.location.href = `/for-you?category=${encodeURIComponent(category)}`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-gradient-to-br from-primary via-blue-600 to-purple-700 text-white relative overflow-hidden"
-      >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-10"></div>
+    <div className={`min-h-screen transition-colors duration-300 overflow-hidden ${
+      isDarkMode 
+        ? 'bg-[#0f172a] text-white' 
+        : 'bg-gradient-to-br from-gray-50 via-white to-blue-50 text-gray-900'
+    }`}>
+      <div className="relative">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className={`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl ${
+            isDarkMode ? 'bg-purple-400/10' : 'bg-purple-400/20'
+          }`}></div>
+          <div className={`absolute top-40 right-10 w-96 h-96 rounded-full blur-3xl ${
+            isDarkMode ? 'bg-pink-500/10' : 'bg-pink-500/20'
+          }`}></div>
+          <div className={`absolute bottom-20 left-1/2 w-80 h-80 rounded-full blur-3xl ${
+            isDarkMode ? 'bg-yellow-400/10' : 'bg-yellow-400/20'
+          }`}></div>
         </div>
 
-        <div className="container py-24 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="flex justify-center mb-6"
-            >
-              <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+        {/* Hero Section */}
+        <section className="relative z-10 pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto text-center">
+            {/* Floating Icon */}
+            <div className="flex justify-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-400 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/25 animate-pulse">
                 <Sparkles className="w-10 h-10 text-white" />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl md:text-6xl font-bold mb-6"
-            >
-              Welcome to <span className="bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent">BlogPlatform</span>
-            </motion.h1>
+            {/* Main Heading */}
+            <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-tight ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Welcome to{' '}
+              <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
+                BlogPlatform
+              </span>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed"
-            >
+            {/* Subtext */}
+            <p className={`text-lg sm:text-xl lg:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed ${
+              isDarkMode ? 'text-slate-400' : 'text-gray-600'
+            }`}>
               Discover amazing stories, share your thoughts, and connect with writers worldwide.
               Join our community of passionate storytellers.
-            </motion.p>
-
-            {/* Quick Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="flex justify-center space-x-8 mb-8"
-            >
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <BookOpen className="w-6 h-6 mr-2" />
-                  <span className="text-2xl font-bold">{posts.length}+</span>
-                </div>
-                <p className="text-blue-200 text-sm">Stories</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Users className="w-6 h-6 mr-2" />
-                  <span className="text-2xl font-bold">100+</span>
-                </div>
-                <p className="text-blue-200 text-sm">Writers</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <BarChart3 className="w-6 h-6 mr-2" />
-                  <span className="text-2xl font-bold">1K+</span>
-                </div>
-                <p className="text-blue-200 text-sm">Readers</p>
-              </div>
-            </motion.div>
+            </p>
 
             {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="space-x-4"
-            >
-              {!isAuthenticated ? (
-                <>
-                  <Link
-                    to="/register"
-                    className="btn btn-lg bg-white text-primary hover:bg-gray-100"
-                  >
-                    <PenTool className="w-5 h-5 mr-2" />
-                    Start Writing
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="btn btn-lg btn-secondary border-2 border-white text-white hover:bg-white hover:text-primary"
-                  >
-                    Sign In
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  to="/create"
-                  className="btn btn-lg bg-white text-primary hover:bg-gray-100"
-                >
-                  <PenTool className="w-5 h-5 mr-2" />
-                  Write New Post
-                </Link>
-              )}
-            </motion.div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Search and Filter Section */}
-      <section className="container py-12">
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSearch} className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for posts, topics, authors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10 pr-4 h-12 text-lg"
-              />
-              <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 btn btn-primary btn-sm">
-                Search
-              </button>
-            </div>
-          </form>
-
-          {/* Category Filter */}
-          <div className="flex items-center space-x-2 mb-8 overflow-x-auto pb-2">
-            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            <button
-              onClick={() => handleCategoryChange('')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === ''
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              All
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => handleCategoryChange(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors capitalize ${
-                  selectedCategory === category
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <Link
+                to={isAuthenticated ? "/create-post" : "/register"}
+                className="group relative px-8 py-4 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-400 rounded-2xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50"
+                aria-label={isAuthenticated ? "Write a new story" : "Register to write stories"}
               >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Posts */}
-      {featuredPosts.length > 0 && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="container py-8 border-b border-gray-200"
-        >
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Stories</h2>
-            <p className="text-gray-600">Handpicked stories from our community</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredPosts.slice(0, 3).map((post) => (
-              <PostCard
-                key={post._id}
-                post={post}
-                currentUserId={(user as any)?._id}
-                onLike={handleLike}
-              />
-            ))}
-          </div>
-        </motion.section>
-      )}
-
-      {/* Main Posts Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        className="container py-12"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">
-            {searchTerm || selectedCategory ? 'Search Results' : 'Latest Posts'}
-          </h2>
-          {(searchTerm || selectedCategory) && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('');
-                setCurrentPage(1);
-              }}
-              className="btn btn-secondary btn-sm"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <PostCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : posts.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post, index) => (
-                <motion.div
-                  key={post._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                >
-                  <PostCard
-                    post={post}
-                    currentUserId={(user as any)?._id}
-                    onLike={handleLike}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-12">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="btn btn-secondary"
-                  >
-                    Previous
-                  </button>
-
-                  {[...Array(totalPages)].map((_, index) => {
-                    const page = index + 1;
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`btn ${
-                          currentPage === page ? 'btn-primary' : 'btn-secondary'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="btn btn-secondary"
-                  >
-                    Next
-                  </button>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-400 rounded-2xl blur opacity-0 group-hover:opacity-75 transition-opacity duration-300"></div>
+                <div className="relative flex items-center justify-center">
+                  <PenTool className="w-5 h-5 mr-2" />
+                  Write a Story
                 </div>
+              </Link>
+
+              <Link
+                to="/for-you"
+                className={`group px-8 py-4 backdrop-blur-sm border rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+                  isDarkMode 
+                    ? 'bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600/50' 
+                    : 'bg-white/70 border-gray-200 text-gray-900 hover:bg-white/90'
+                }`}
+                aria-label="Explore all blog posts"
+              >
+                <div className="flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  Explore Posts
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="relative z-10 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {/* Stories Stat */}
+              <div className={`backdrop-blur-sm rounded-2xl p-6 text-center border transition-all duration-300 hover:scale-105 ${
+                isDarkMode 
+                  ? 'bg-slate-800/50 border-slate-700/50 hover:border-purple-500/50' 
+                  : 'bg-white/80 border-gray-200/50 hover:border-purple-500/50 shadow-lg'
+              }`}>
+                <div className="w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl flex items-center justify-center hover:scale-110 transition-transform duration-300">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {stats.totalPosts}+
+                </div>
+                <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>Stories</div>
+              </div>
+
+              {/* Writers Stat */}
+              <div className={`backdrop-blur-sm rounded-2xl p-6 text-center border transition-all duration-300 hover:scale-105 ${
+                isDarkMode 
+                  ? 'bg-slate-800/50 border-slate-700/50 hover:border-pink-500/50' 
+                  : 'bg-white/80 border-gray-200/50 hover:border-pink-500/50 shadow-lg'
+              }`}>
+                <div className="w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-pink-400 to-pink-600 rounded-xl flex items-center justify-center hover:scale-110 transition-transform duration-300">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {stats.totalWriters}+
+                </div>
+                <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>Writers</div>
+              </div>
+
+              {/* Readers Stat */}
+              <div className={`backdrop-blur-sm rounded-2xl p-6 text-center border transition-all duration-300 hover:scale-105 ${
+                isDarkMode 
+                  ? 'bg-slate-800/50 border-slate-700/50 hover:border-yellow-500/50' 
+                  : 'bg-white/80 border-gray-200/50 hover:border-yellow-500/50 shadow-lg'
+              }`}>
+                <div className="w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {Math.floor(stats.totalReaders / 1000)}K+
+                </div>
+                <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>Readers</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Search + Filter Section */}
+        <section className="relative z-10 py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="mb-8">
+              <div className="relative">
+                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                  isDarkMode ? 'text-slate-400' : 'text-gray-500'
+                }`} />
+                <input
+                  type="text"
+                  placeholder="Search for posts, topics, authors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-12 pr-4 py-4 backdrop-blur-sm border rounded-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                    isDarkMode 
+                      ? 'bg-slate-800/50 border-slate-600 text-white placeholder-slate-400' 
+                      : 'bg-white/80 border-gray-200 text-gray-900 placeholder-gray-500'
+                  }`}
+                  aria-label="Search for posts, topics, or authors"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl text-white font-medium hover:from-purple-500 hover:to-pink-600 transition-all duration-300"
+                  aria-label="Search"
+                >
+                  Search
+                </button>
+              </div>
+            </form>
+
+            {/* Category Filters */}
+            <div className="flex items-center gap-4 overflow-x-auto pb-4">
+              <div className={`flex items-center gap-2 flex-shrink-0 ${
+                isDarkMode ? 'text-slate-400' : 'text-gray-600'
+              }`}>
+                <Filter className="w-5 h-5" />
+                <span className="text-sm font-medium">Categories:</span>
+              </div>
+              
+              <div className="flex gap-3 min-w-max">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryFilter(category)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105 whitespace-nowrap ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                    }`}
+                    aria-label={`Filter posts by ${category}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Empty State Placeholder */}
+        <section className="relative z-10 py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className={`w-24 h-24 mx-auto mb-6 rounded-3xl flex items-center justify-center shadow-2xl hover:scale-110 transition-transform duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-purple-400/20 to-pink-500/20 shadow-purple-500/10' 
+                : 'bg-gradient-to-r from-purple-400/30 to-pink-500/30 shadow-purple-500/20'
+            }`}>
+              <BookOpen className={`w-12 h-12 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+            </div>
+            
+            <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Be the first to share a story!
+            </h3>
+            
+            <p className={`text-lg mb-8 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+              Start your writing journey today and inspire others with your unique perspective and experiences.
+            </p>
+
+            {!isAuthenticated && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/register"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl text-white font-medium hover:from-purple-500 hover:to-pink-600 transition-all duration-300 hover:scale-105"
+                  aria-label="Join BlogPlatform"
+                >
+                  Join BlogPlatform
+                </Link>
+                <Link
+                  to="/login"
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 ${
+                    isDarkMode 
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                  aria-label="Sign in to your account"
+                >
+                  Sign In
+                </Link>
               </div>
             )}
-          </>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No posts found</h3>
-            <p className="text-gray-500 mb-6">
-              {searchTerm || selectedCategory 
-                ? 'Try adjusting your search criteria' 
-                : 'Be the first to share a story!'}
-            </p>
-            {isAuthenticated && (
-              <Link to="/create" className="btn btn-primary">
-                <PenTool className="w-4 h-4 mr-2" />
-                Write First Post
-              </Link>
-            )}
-          </motion.div>
-        )}
-      </motion.section>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
 
-export default Home;
+export default HomePage;
