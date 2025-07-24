@@ -293,6 +293,7 @@ GET    /api/v1/users/stats    # Get user stats
 POST   /api/v1/users/:id/avatar # Upload avatar
 ```
 
+
 ## 🔧 Development
 
 ### Available Scripts
