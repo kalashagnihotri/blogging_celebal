@@ -1,18 +1,36 @@
 {
-  "name": "blog-platform",
+  "name": "modern-blog-platform",
   "version": "1.0.0",
-  "description": "A full-stack blog platform with Node.js, Express, MongoDB, React, and TypeScript",
-  "main": "index.js",
+  "description": "A modern full-stack blog platform built with React, Node.js, Express, and MongoDB - College Project",
+  "main": "backend/server.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start",
-    "install-deps": "cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "install-deps": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "heroku-postbuild": "npm install --prefix frontend && npm run build --prefix frontend",
     "test": "cd backend && npm test"
   },
-  "keywords": ["blog", "nodejs", "react", "typescript", "mongodb"],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/modern-blog-platform.git"
+  },
+  "keywords": [
+    "blog",
+    "react",
+    "nodejs",
+    "express", 
+    "mongodb",
+    "typescript",
+    "tailwindcss",
+    "full-stack",
+    "modern",
+    "responsive",
+    "college-project"
+  ],
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"

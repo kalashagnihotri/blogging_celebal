@@ -18,6 +18,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import ImageModal from '../components/ui/ImageModal';
 
 interface UserProfile {
   _id: string;
@@ -58,6 +59,9 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState('');
+  const [modalImageAlt, setModalImageAlt] = useState('');
 
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
   const isOwnProfile = currentUser && currentUser.id === userId;
@@ -153,6 +157,12 @@ const Profile: React.FC = () => {
     });
   };
 
+  const openImageModal = (imageUrl: string, imageAlt: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageAlt(imageAlt);
+    setImageModalOpen(true);
+  };
+
   return (
     <div className={`min-h-screen ${
       isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
@@ -170,7 +180,13 @@ const Profile: React.FC = () => {
                   ? userProfile.avatar 
                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&size=128&background=6366f1&color=ffffff`}
                 alt={userProfile.name}
-                className="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 shadow-lg"
+                className="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                onClick={() => openImageModal(
+                  userProfile.avatar && userProfile.avatar !== 'default-avatar.png' 
+                    ? userProfile.avatar 
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&size=512&background=6366f1&color=ffffff`,
+                  `${userProfile.name}'s profile picture`
+                )}
               />
               {isOwnProfile && (
                 <button className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition-colors">
@@ -388,12 +404,26 @@ const Profile: React.FC = () => {
                           {post.excerpt}
                         </p>
                       </div>
-                      {post.image && (
+                      {post.image && post.image !== 'default-post.jpg' ? (
                         <img
-                          src={post.image}
+                          src={
+                            post.image.startsWith('http') 
+                              ? post.image  // Cloudinary URL
+                              : `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${post.image}` // Local upload
+                          }
                           alt={post.title}
-                          className="w-24 h-16 object-cover rounded ml-4"
+                          className="w-24 h-16 object-cover rounded ml-4 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => openImageModal(
+                            post.image.startsWith('http') 
+                              ? post.image  
+                              : `${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/uploads/${post.image}`, 
+                            `Image from: ${post.title}`
+                          )}
                         />
+                      ) : (
+                        <div className="w-24 h-16 bg-gray-200 dark:bg-gray-700 rounded ml-4 flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">No Image</span>
+                        </div>
                       )}
                     </div>
                     
@@ -535,6 +565,14 @@ const Profile: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModalOpen}
+        imageUrl={modalImageUrl}
+        imageAlt={modalImageAlt}
+        onClose={() => setImageModalOpen(false)}
+      />
     </div>
   );
 };

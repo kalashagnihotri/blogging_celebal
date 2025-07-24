@@ -145,11 +145,22 @@ const ForYou: React.FC = () => {
                   <img
                     src={
                       post.image && post.image !== 'default-post.jpg'
-                        ? `${baseUrl}/uploads/${post.image}`
-                        : '/api/placeholder/400/240'
+                        ? post.image.startsWith('http') 
+                          ? post.image  // Cloudinary URL
+                          : `${baseUrl}/uploads/${post.image}` // Local upload
+                        : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=240&fit=crop` // Default fallback
                     }
                     alt={post.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      // Add click handler for popup
+                      const imageUrl = post.image && post.image !== 'default-post.jpg'
+                        ? post.image.startsWith('http') 
+                          ? post.image  
+                          : `${baseUrl}/uploads/${post.image}`
+                        : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop`;
+                      window.open(imageUrl, '_blank');
+                    }}
                   />
                 </div>
 
@@ -187,7 +198,12 @@ const ForYou: React.FC = () => {
                             : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&size=32&background=6366f1&color=ffffff`
                         }
                         alt={post.author.name}
-                        className="h-8 w-8 rounded-full object-cover"
+                        className="h-8 w-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          if (post.author.avatar && post.author.avatar !== 'default-avatar.png' && post.author.avatar.startsWith('http')) {
+                            window.open(post.author.avatar, '_blank');
+                          }
+                        }}
                       />
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">

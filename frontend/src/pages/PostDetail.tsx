@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import ImagePopup from '../components/ui/ImagePopup';
 import { 
   Eye,
   Heart,
@@ -51,6 +52,9 @@ const PostDetail: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isCommenting, setIsCommenting] = useState(false);
+  const [showImagePopup, setShowImagePopup] = useState(false);
+  const [popupImageUrl, setPopupImageUrl] = useState('');
+  const [popupImageAlt, setPopupImageAlt] = useState('');
   const viewRecorded = useRef(false);
 
   const { id } = useParams<{ id: string }>();
@@ -187,7 +191,14 @@ const PostDetail: React.FC = () => {
                 : `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.name)}&size=32&background=6366f1&color=ffffff`
             }
             alt={comment.author.name}
-            className="h-8 w-8 rounded-full object-cover"
+            className="h-8 w-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              if (comment.author.avatar && comment.author.avatar !== 'default-avatar.png' && comment.author.avatar.startsWith('http')) {
+                setPopupImageUrl(comment.author.avatar);
+                setPopupImageAlt(`${comment.author.name}'s profile picture`);
+                setShowImagePopup(true);
+              }
+            }}
           />
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
@@ -254,7 +265,14 @@ const PostDetail: React.FC = () => {
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&size=48&background=6366f1&color=ffffff`
                 }
                 alt={post.author.name}
-                className="h-12 w-12 rounded-full object-cover"
+                className="h-12 w-12 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => {
+                  if (post.author.avatar && post.author.avatar !== 'default-avatar.png' && post.author.avatar.startsWith('http')) {
+                    setPopupImageUrl(post.author.avatar);
+                    setPopupImageAlt(`${post.author.name}'s profile picture`);
+                    setShowImagePopup(true);
+                  }
+                }}
               />
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-white">{post.author.name}</h3>
@@ -328,7 +346,12 @@ const PostDetail: React.FC = () => {
             <img
               src={post.image.startsWith('http') ? post.image : `${baseUrl}/uploads/${post.image}`}
               alt={post.title}
-              className="w-full h-96 object-cover rounded-lg"
+              className="w-full h-96 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => {
+                setPopupImageUrl(post.image.startsWith('http') ? post.image : `${baseUrl}/uploads/${post.image}`);
+                setPopupImageAlt(post.title);
+                setShowImagePopup(true);
+              }}
             />
           </div>
         )}
@@ -373,7 +396,14 @@ const PostDetail: React.FC = () => {
                       : '/default-avatar.png'
                   }
                   alt={user?.name}
-                  className="h-10 w-10 rounded-full object-cover"
+                  className="h-10 w-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => {
+                    if (user?.avatar) {
+                      setPopupImageUrl(`${baseUrl}/uploads/${user.avatar}`);
+                      setPopupImageAlt(`${user.name}'s profile picture`);
+                      setShowImagePopup(true);
+                    }
+                  }}
                 />
                 <div className="flex-1">
                   <textarea
@@ -422,6 +452,14 @@ const PostDetail: React.FC = () => {
           </div>
         </div>
       </article>
+
+      {/* Image Popup */}
+      <ImagePopup
+        isOpen={showImagePopup}
+        imageUrl={popupImageUrl}
+        alt={popupImageAlt}
+        onClose={() => setShowImagePopup(false)}
+      />
     </div>
   );
 };

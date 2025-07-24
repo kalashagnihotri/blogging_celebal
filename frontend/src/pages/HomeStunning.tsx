@@ -233,11 +233,15 @@ const HomeStunning: React.FC = () => {
                 >
                   {/* Post Image */}
                   <div className="h-48 bg-gradient-to-br from-indigo-500 to-purple-600 relative overflow-hidden">
-                    {post.image ? (
+                    {post.image && post.image !== 'default-post.jpg' ? (
                       <img 
                         src={post.image} 
                         alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-pointer"
+                        onClick={() => window.open(post.image, '_blank')}
+                        onError={(e) => {
+                          e.currentTarget.src = `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop`;
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-4xl">

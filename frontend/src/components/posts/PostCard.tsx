@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ImagePopup from '../ui/ImagePopup';
 
 interface Post {
   _id: string;
@@ -28,6 +29,10 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
+  const [showImagePopup, setShowImagePopup] = useState(false);
+  const [popupImageUrl, setPopupImageUrl] = useState('');
+  const [popupImageAlt, setPopupImageAlt] = useState('');
+  
   const isLiked = currentUserId ? post.likes.includes(currentUserId) : false;
 
   const formatDate = (dateString: string) => {
@@ -51,11 +56,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
       <Link to={`/posts/${post._id}`} className="block">
         {/* Image Section */}
         <div className="relative h-48 overflow-hidden">
-          {post.image ? (
+          {post.image && post.image !== 'default-post.jpg' ? (
             <img
               src={post.image}
               alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setPopupImageUrl(post.image);
+                setPopupImageAlt(post.title);
+                setShowImagePopup(true);
+              }}
               onError={(e) => {
                 e.currentTarget.src = `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop`;
               }}
@@ -116,11 +128,18 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
               to={`/profile/${post.author._id}`}
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
             >
-              {post.author.avatar ? (
+              {post.author.avatar && post.author.avatar !== 'default-avatar.png' && post.author.avatar.startsWith('http') ? (
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPopupImageUrl(post.author.avatar);
+                    setPopupImageAlt(`${post.author.name}'s profile picture`);
+                    setShowImagePopup(true);
+                  }}
                 />
               ) : (
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -162,6 +181,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, currentUserId, onLike }) => {
           </div>
         </div>
       </Link>
+
+      {/* Image Popup */}
+      <ImagePopup
+        isOpen={showImagePopup}
+        imageUrl={popupImageUrl}
+        alt={popupImageAlt}
+        onClose={() => setShowImagePopup(false)}
+      />
     </div>
   );
 };
