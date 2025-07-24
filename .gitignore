@@ -1,8 +1,11 @@
 # Dependencies
 node_modules/
 */node_modules/
+<<<<<<< HEAD
 .github/    
 .vscode/
+=======
+>>>>>>> 781ff9f472def4214ed38fd869732fdd39a7323e
 
 # Environment variables
 .env
