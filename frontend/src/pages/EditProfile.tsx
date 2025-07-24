@@ -17,7 +17,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-toastify';
-import ImageUpload from '../components/ui/ImageUpload';
+import ImageCropper from '../components/ui/ImageCropper';
+import ImageModal from '../components/ui/ImageModal';
 
 interface EditProfileData {
   name: string;
@@ -47,6 +48,9 @@ const EditProfile: React.FC = () => {
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState('');
+  const [modalImageAlt, setModalImageAlt] = useState('');
 
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -147,6 +151,12 @@ const EditProfile: React.FC = () => {
       .slice(0, 2);
   };
 
+  const openImageModal = (imageUrl: string, imageAlt: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageAlt(imageAlt);
+    setImageModalOpen(true);
+  };
+
   return (
     <div className={`min-h-screen ${
       isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
@@ -174,9 +184,9 @@ const EditProfile: React.FC = () => {
           }`}>
             <h2 className="text-xl font-semibold mb-6">Profile Picture</h2>
             
-            <ImageUpload
+            <ImageCropper
               uploadType="profile"
-              onImageUpload={(imageUrl) => {
+              onImageUpload={(imageUrl: string) => {
                 setAvatarPreview(imageUrl);
                 setAvatarFile(null); // Clear file since we're using URL now
               }}
@@ -396,6 +406,14 @@ const EditProfile: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModalOpen}
+        imageUrl={modalImageUrl}
+        imageAlt={modalImageAlt}
+        onClose={() => setImageModalOpen(false)}
+      />
     </div>
   );
 };

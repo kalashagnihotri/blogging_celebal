@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, truncateText } from '../utils/cn';
+import ImagePopup from '../components/ui/ImagePopup';
 
 interface Post {
   _id: string;
@@ -45,6 +46,9 @@ const DashboardSimple: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [showImagePopup, setShowImagePopup] = useState(false);
+  const [popupImageUrl, setPopupImageUrl] = useState('');
+  const [popupImageAlt, setPopupImageAlt] = useState('');
 
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -215,9 +219,6 @@ const DashboardSimple: React.FC = () => {
           >
             ➕ Create New Post
           </Link>
-          <button className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg transition-colors font-medium">
-            ⚙️ Settings
-          </button>
         </div>
 
         {/* Stats Cards */}
@@ -322,7 +323,7 @@ const DashboardSimple: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <tr>
-                    <th className="text-left py-3 px-6 font-medium text-gray-900 dark:text-white">Title</th>
+                    <th className="text-left py-3 px-6 font-medium text-gray-900 dark:text-white">Post</th>
                     <th className="text-left py-3 px-6 font-medium text-gray-900 dark:text-white">Category</th>
                     <th className="text-left py-3 px-6 font-medium text-gray-900 dark:text-white">Published</th>
                     <th className="text-left py-3 px-6 font-medium text-gray-900 dark:text-white">Stats</th>
@@ -334,16 +335,43 @@ const DashboardSimple: React.FC = () => {
                   {sortedPosts.map((post) => (
                     <tr key={post._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="py-4 px-6">
-                        <div>
-                          <Link
-                            to={`/posts/${post._id}`}
-                            className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                          >
-                            {truncateText(post.title, 50)}
-                          </Link>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {truncateText(post.content.replace(/<[^>]*>/g, ''), 80)}
-                          </p>
+                        <div className="flex items-center space-x-4">
+                          {/* Image Thumbnail */}
+                          <div className="flex-shrink-0">
+                            <img
+                              src={
+                                post.imageUrl && post.imageUrl !== 'default-post.jpg'
+                                  ? post.imageUrl.startsWith('http') 
+                                    ? post.imageUrl 
+                                    : `${baseUrl}/uploads/${post.imageUrl}`
+                                  : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=100&h=60&fit=crop`
+                              }
+                              alt={post.title}
+                              className="w-16 h-10 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => {
+                                const imageUrl = post.imageUrl && post.imageUrl !== 'default-post.jpg'
+                                  ? post.imageUrl.startsWith('http') 
+                                    ? post.imageUrl 
+                                    : `${baseUrl}/uploads/${post.imageUrl}`
+                                  : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop`;
+                                setPopupImageUrl(imageUrl);
+                                setPopupImageAlt(post.title);
+                                setShowImagePopup(true);
+                              }}
+                            />
+                          </div>
+                          {/* Post Info */}
+                          <div className="flex-1 min-w-0">
+                            <Link
+                              to={`/posts/${post._id}`}
+                              className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                            >
+                              {truncateText(post.title, 40)}
+                            </Link>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              {truncateText(post.content.replace(/<[^>]*>/g, ''), 60)}
+                            </p>
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-6">
@@ -407,6 +435,14 @@ const DashboardSimple: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Image Popup */}
+      <ImagePopup
+        isOpen={showImagePopup}
+        imageUrl={popupImageUrl}
+        alt={popupImageAlt}
+        onClose={() => setShowImagePopup(false)}
+      />
     </div>
   );
 };

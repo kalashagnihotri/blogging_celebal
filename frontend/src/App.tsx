@@ -15,6 +15,7 @@ import EditProfile from './pages/EditProfile';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import CreatePost from './pages/CreatePost';
+import EditPost from './pages/EditPost';
 import PostDetail from './pages/PostDetail';
 
 function App() {
@@ -53,7 +54,7 @@ function App() {
                 path="/edit/:id"
                 element={
                   <ProtectedRoute>
-                    <CreatePost />
+                    <EditPost />
                   </ProtectedRoute>
                 }
               />

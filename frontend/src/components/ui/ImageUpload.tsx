@@ -7,13 +7,15 @@ interface ImageUploadProps {
   uploadType: 'blog' | 'profile';
   currentImage?: string;
   className?: string;
+  onImageClick?: (imageUrl: string, imageAlt: string) => void;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   onImageUpload,
   uploadType,
   currentImage,
-  className = ''
+  className = '',
+  onImageClick
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>(currentImage || '');
@@ -96,8 +98,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               src={previewUrl} 
               alt="Preview" 
               className={`mx-auto rounded-lg max-h-48 ${
-                uploadType === 'profile' ? 'w-24 h-24 rounded-full object-cover' : 'object-contain'
+                uploadType === 'profile' 
+                  ? 'w-24 h-24 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity' 
+                  : 'object-contain cursor-pointer hover:opacity-80 transition-opacity'
               }`}
+              onClick={() => onImageClick && onImageClick(previewUrl, uploadType === 'profile' ? 'Profile Picture' : 'Blog Image')}
             />
             <button
               onClick={removeImage}

@@ -192,11 +192,21 @@ const Dashboard: React.FC = () => {
                       <img
                         src={
                           post.image && post.image !== 'default-post.jpg'
-                            ? `${baseUrl}/uploads/${post.image}`
-                            : '/default-post.jpg'
+                            ? post.image.startsWith('http') 
+                              ? post.image  // Cloudinary URL
+                              : `${baseUrl}/uploads/${post.image}` // Local upload
+                            : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=100&h=100&fit=crop` // Default fallback
                         }
                         alt={post.title}
-                        className="h-12 w-12 rounded-lg object-cover"
+                        className="h-12 w-12 rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          const imageUrl = post.image && post.image !== 'default-post.jpg'
+                            ? post.image.startsWith('http') 
+                              ? post.image  
+                              : `${baseUrl}/uploads/${post.image}`
+                            : `https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop`;
+                          window.open(imageUrl, '_blank');
+                        }}
                       />
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 line-clamp-1">

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { 
@@ -19,7 +19,21 @@ interface FormData {
   image: File | null;
 }
 
-const CreatePost: React.FC = () => {
+interface Post {
+  _id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  category: string;
+  tags: string[];
+  image: string;
+  author: {
+    _id: string;
+    name: string;
+  };
+}
+
+const EditPost: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     title: '',
     content: '',
@@ -30,15 +44,54 @@ const CreatePost: React.FC = () => {
   });
   const [previewImage, setPreviewImage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
   const categories = [
     'tech', 'life', 'travel', 'food', 'business', 'health', 'other'
   ];
+
+  useEffect(() => {
+    if (id) {
+      fetchPost();
+    }
+  }, [id]);
+
+  const fetchPost = async () => {
+    try {
+      setIsFetching(true);
+      const response = await axios.get(`${baseUrl}/api/v1/posts/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      const post: Post = response.data.data;
+      setFormData({
+        title: post.title,
+        content: post.content,
+        excerpt: post.excerpt,
+        category: post.category,
+        tags: Array.isArray(post.tags) ? post.tags.join(', ') : '',
+        image: null,
+      });
+      
+      if (post.image && post.image !== 'default-post.jpg') {
+        setPreviewImage(post.image);
+      }
+    } catch (error: any) {
+      console.error('Fetch post error:', error);
+      toast.error('Failed to fetch post');
+      navigate('/dashboard');
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -117,18 +170,18 @@ const CreatePost: React.FC = () => {
         postData.tags = tagsArray.join(',');
       }
 
-      const response = await axios.post(`${baseUrl}/api/v1/posts`, postData, {
+      const response = await axios.put(`${baseUrl}/api/v1/posts/${id}`, postData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
-      toast.success('Post created successfully!');
-      navigate('/dashboard'); // Navigate to dashboard instead of post detail
+      toast.success('Post updated successfully!');
+      navigate(`/post/${id}`); // Navigate to the updated post instead of dashboard
     } catch (error: any) {
-      console.error('Create post error:', error.response?.data || error);
-      toast.error(error.response?.data?.error || 'Failed to create post');
+      console.error('Update post error:', error.response?.data || error);
+      toast.error(error.response?.data?.error || 'Failed to update post');
     } finally {
       setIsLoading(false);
     }
@@ -141,35 +194,41 @@ const CreatePost: React.FC = () => {
       </h1>
       
       {previewImage && (
-        <img
+        <img 
           src={previewImage}
-          alt="Post preview"
+          alt="Preview"
           className="w-full h-64 object-cover rounded-lg mb-6"
         />
       )}
-
-      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
-        {formData.category && (
-          <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full capitalize">
-            {formData.category}
-          </span>
-        )}
+      
+      <div className="flex items-center space-x-4 mb-6 text-sm text-gray-600 dark:text-gray-400">
+        <span className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-3 py-1 rounded-full">
+          {formData.category || 'other'}
+        </span>
         {formData.tags && (
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-2">
             {formData.tags.split(',').map((tag, index) => (
-              <span key={index} className="text-gray-600 dark:text-gray-400">
+              <span key={index} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded text-xs">
                 #{tag.trim()}
               </span>
             ))}
           </div>
         )}
       </div>
-
+      
       <div className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
-        {formData.content || 'Start writing your content...'}
+        {formData.content || 'Your post content will appear here...'}
       </div>
     </div>
   );
+
+  if (isFetching) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -179,7 +238,7 @@ const CreatePost: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white">
-                Create New Post
+                Edit Post
               </h1>
               <div className="flex space-x-2">
                 <button
@@ -246,13 +305,12 @@ const CreatePost: React.FC = () => {
                     >
                       <option value="">Select a category</option>
                       {categories.map((category) => (
-                        <option key={category} value={category} className="capitalize">
-                          {category}
+                        <option key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
                         </option>
                       ))}
                     </select>
                   </div>
-
                   <div>
                     <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Tags
@@ -324,7 +382,7 @@ const CreatePost: React.FC = () => {
                 <div className="flex justify-end space-x-4">
                   <button
                     type="button"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate(`/post/${id}`)}
                     className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     Cancel
@@ -334,7 +392,7 @@ const CreatePost: React.FC = () => {
                     disabled={isLoading}
                     className="px-6 py-3 bg-primary-600 dark:bg-primary-500 hover:bg-primary-700 dark:hover:bg-primary-600 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {isLoading ? 'Publishing...' : 'Publish Post'}
+                    {isLoading ? 'Updating...' : 'Update Post'}
                   </button>
                 </div>
               </form>
@@ -350,4 +408,4 @@ const CreatePost: React.FC = () => {
   );
 };
 
-export default CreatePost;
+export default EditPost;
